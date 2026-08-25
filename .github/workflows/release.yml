@@ -1,0 +1,121 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  release:
+    runs-on: windows-2022
+
+    steps:
+      - name: Check out tagged source
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Configure MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Validate tag
+        id: version
+        shell: pwsh
+        run: |
+          $tag = '${{ github.ref_name }}'
+          if ($tag -notmatch '^v(?<version>\d+\.\d+\.\d+)$') {
+            throw "Tag '$tag' is not a semantic version tag."
+          }
+
+          "version=$($Matches.version)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "archive=HighPollingRateFix-$tag.zip" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+          $repository = '${{ github.repository }}'
+          @(
+            'Removes the frame stutter GTA San Andreas shows with 1000 Hz and faster mice.'
+            ''
+            'Copy `HighPollingRateFix.asi` into the directory containing `gta_sa.exe`.'
+            'An ASI loader is required. There is nothing to configure.'
+            ''
+            '### Verification'
+            ''
+            '```text'
+            "gh attestation verify HighPollingRateFix-$tag.zip -R $repository"
+            '```'
+          ) | Set-Content -LiteralPath release-notes.md -Encoding utf8
+
+      - name: Build Release Win32
+        shell: pwsh
+        run: msbuild HighPollingRateFix.sln /t:Rebuild /p:Configuration=Release /p:Platform=Win32 /m
+
+      - name: Verify and package release
+        shell: pwsh
+        run: |
+          $version = '${{ steps.version.outputs.version }}'
+          $archiveName = '${{ steps.version.outputs.archive }}'
+          $binary = 'build\HighPollingRateFix.asi'
+          $archive = "build\$archiveName"
+
+          if (-not (Test-Path -LiteralPath $binary)) {
+            throw "Release binary was not produced."
+          }
+
+          $fileVersion = (Get-Item -LiteralPath $binary).VersionInfo.FileVersion
+          if ($fileVersion -ne $version) {
+            throw "Binary version $fileVersion does not match tag version $version."
+          }
+
+          Compress-Archive -LiteralPath $binary -DestinationPath $archive -CompressionLevel Optimal
+          $digest = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$digest  $archiveName" | Set-Content -LiteralPath "$archive.sha256" -Encoding ascii
+
+      - name: Attest release archive
+        uses: actions/attest@v4
+        with:
+          subject-path: build/${{ steps.version.outputs.archive }}
+
+      - name: Publish GitHub release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = '${{ github.ref_name }}'
+          $repository = '${{ github.repository }}'
+          $archive = 'build\${{ steps.version.outputs.archive }}'
+          $checksum = 'build\${{ steps.version.outputs.archive }}.sha256'
+
+          gh release view $tag --repo $repository *> $null
+          $releaseExists = $LASTEXITCODE -eq 0
+          $global:LASTEXITCODE = 0
+
+          if ($releaseExists) {
+            gh release upload $tag $archive $checksum `
+              --repo $repository `
+              --clobber
+            if ($LASTEXITCODE -ne 0) {
+              throw "Failed to replace assets for release $tag."
+            }
+
+            gh release edit $tag `
+              --repo $repository `
+              --title "High Polling Rate Fix $tag" `
+              --notes-file release-notes.md `
+              --draft=false
+            if ($LASTEXITCODE -ne 0) {
+              throw "Failed to update release $tag."
+            }
+          } else {
+            gh release create $tag $archive $checksum `
+              --repo $repository `
+              --title "High Polling Rate Fix $tag" `
+              --notes-file release-notes.md `
+              --verify-tag
+            if ($LASTEXITCODE -ne 0) {
+              throw "Failed to create release $tag."
+            }
+          }
