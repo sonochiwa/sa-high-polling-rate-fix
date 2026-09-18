@@ -41,12 +41,6 @@ jobs:
             ''
             'Copy `HighPollingRateFix.asi` into the directory containing `gta_sa.exe`.'
             'An ASI loader is required. There is nothing to configure.'
-            ''
-            '### Verification'
-            ''
-            '```text'
-            "gh attestation verify HighPollingRateFix-$tag.zip -R $repository"
-            '```'
           ) | Set-Content -LiteralPath release-notes.md -Encoding utf8
 
       - name: Build Release Win32
