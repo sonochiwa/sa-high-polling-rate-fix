@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -49,13 +49,14 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level4</WarningLevel>
+      <TreatWarningAsError>true</TreatWarningAsError>
       <SDLCheck>false</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;DIRECTINPUT_VERSION=0x0800;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NOMINMAX;WIN32_LEAN_AND_MEAN;WIN32;_DEBUG;_WINDOWS;_USRDLL;DIRECTINPUT_VERSION=0x0800;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <ExceptionHandling>Async</ExceptionHandling>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <AdditionalIncludeDirectories>$(SolutionDir)vendor\minhook\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)src;$(SolutionDir)vendor\minhook\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -70,15 +71,16 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <WarningLevel>Level4</WarningLevel>
+      <TreatWarningAsError>true</TreatWarningAsError>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>false</SDLCheck>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;DIRECTINPUT_VERSION=0x0800;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NOMINMAX;WIN32_LEAN_AND_MEAN;WIN32;NDEBUG;_WINDOWS;_USRDLL;DIRECTINPUT_VERSION=0x0800;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <ExceptionHandling>Async</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalIncludeDirectories>$(SolutionDir)vendor\minhook\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)src;$(SolutionDir)vendor\minhook\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -92,38 +94,54 @@
     </Link>
   </ItemDefinitionGroup>
 
+
+
+
+
   <ItemGroup>
-    <ClCompile Include="dllmain.cpp" />
-    <ClCompile Include="MouseDevice.cpp" />
-    <ClCompile Include="RawMouse.cpp" />
+    <ClCompile Include="HighPollingRateFix.cpp" />
+    <ClCompile Include="clock.cpp" />
+    <ClCompile Include="legacy_messages.cpp" />
+    <ClCompile Include="mouse_device.cpp" />
+    <ClCompile Include="raw_input.cpp" />
     <ClCompile Include="..\vendor\minhook\src\buffer.c">
-      <DisableSpecificWarnings>4100;4201;4244;4310;4701;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <WarningLevel>Level3</WarningLevel>
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <ObjectFileName>$(IntDir)minhook_%(Filename).obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\vendor\minhook\src\hook.c">
-      <DisableSpecificWarnings>4100;4201;4244;4310;4701;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <WarningLevel>Level3</WarningLevel>
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <ObjectFileName>$(IntDir)minhook_%(Filename).obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\vendor\minhook\src\trampoline.c">
-      <DisableSpecificWarnings>4100;4201;4244;4310;4701;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <WarningLevel>Level3</WarningLevel>
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <ObjectFileName>$(IntDir)minhook_%(Filename).obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\vendor\minhook\src\hde\hde32.c">
-      <DisableSpecificWarnings>4100;4201;4244;4310;4701;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <WarningLevel>Level3</WarningLevel>
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <ObjectFileName>$(IntDir)minhook_%(Filename).obj</ObjectFileName>
     </ClCompile>
   </ItemGroup>
-
   <ItemGroup>
-    <ClInclude Include="MouseDevice.h" />
-    <ClInclude Include="RawMouse.h" />
+    <ClInclude Include="clock.h" />
+    <ClInclude Include="legacy_messages.h" />
+    <ClInclude Include="mouse_device.h" />
+    <ClInclude Include="raw_input.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="version.h" />
   </ItemGroup>
-
   <ItemGroup>
     <ResourceCompile Include="HighPollingRateFix.rc" />
   </ItemGroup>
-
   <ItemGroup>
+    <None Include="..\.github\workflows\release.yml" />
+    <None Include="..\CHANGELOG.md" />
+    <None Include="..\LICENSE" />
     <None Include="..\README.md" />
   </ItemGroup>
-
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 
 

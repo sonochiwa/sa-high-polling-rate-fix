@@ -1,6 +1,7 @@
-#include "MouseDevice.h"
+#include "mouse_device.h"
 
-namespace hprf {
+#include "legacy_messages.h"
+
 namespace {
 
 // c_dfDIMouse describes seven objects and c_dfDIMouse2 eleven. Checking the
@@ -29,7 +30,7 @@ DWORD ButtonCountForStateSize(DWORD stateSize) {
     return available < kMouseButtonCount ? available : kMouseButtonCount;
 }
 
-}  // namespace
+} // namespace
 
 RawMouseDevice::RawMouseDevice(IDirectInputDevice8A* inner, bool unicode)
     : m_inner(inner), m_unicode(unicode) {
@@ -334,7 +335,7 @@ HRESULT STDMETHODCALLTYPE RawMouseDevice::SetCooperativeLevel(HWND window,
 
     m_window = window;
     m_exclusive = (flags & DISCL_EXCLUSIVE) != 0;
-    rawmouse::SetTargetWindow(window);
+    legacy::SetTargetWindow(window);
     if (m_acquired) {
         ReleaseCursorClip();
         ApplyCursorClip();
@@ -481,5 +482,3 @@ void RawMouseDevice::ReleaseCursorClip() {
     ClipCursor(nullptr);
     m_cursorClipped = false;
 }
-
-}  // namespace hprf

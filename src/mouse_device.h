@@ -3,9 +3,7 @@
 #include <windows.h>
 #include <dinput.h>
 
-#include "RawMouse.h"
-
-namespace hprf {
+#include "raw_input.h"
 
 // A DirectInput 8 mouse device that serves the game from the raw input
 // accumulator instead of from DirectInput.
@@ -23,12 +21,12 @@ class RawMouseDevice final : public IDirectInputDevice8A {
 public:
     RawMouseDevice(IDirectInputDevice8A* inner, bool unicode);
 
-    /*** IUnknown ***/
+    // IUnknown
     STDMETHOD(QueryInterface)(REFIID riid, LPVOID* object) override;
     STDMETHOD_(ULONG, AddRef)() override;
     STDMETHOD_(ULONG, Release)() override;
 
-    /*** IDirectInputDevice8A ***/
+    // IDirectInputDevice8A
     STDMETHOD(GetCapabilities)(LPDIDEVCAPS caps) override;
     STDMETHOD(EnumObjects)(LPDIENUMDEVICEOBJECTSCALLBACKA callback, LPVOID ref,
                            DWORD flags) override;
@@ -108,5 +106,3 @@ private:
     DWORD m_bufferedCount = 0;
     DWORD m_bufferedRead = 0;
 };
-
-}  // namespace hprf

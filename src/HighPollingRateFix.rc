@@ -1,10 +1,12 @@
 #include <windows.h>
-#include "resource.h"
 
-IDR_VERSION VERSIONINFO
- FILEVERSION 1,0,0,0
- PRODUCTVERSION 1,0,0,0
- FILEFLAGSMASK 0x3fL
+#include "resource.h"
+#include "version.h"
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION PLUGIN_VERSION_MAJOR,PLUGIN_VERSION_MINOR,PLUGIN_VERSION_PATCH,0
+ PRODUCTVERSION PLUGIN_VERSION_MAJOR,PLUGIN_VERSION_MINOR,PLUGIN_VERSION_PATCH,0
+ FILEFLAGSMASK VS_FFI_FILEFLAGSMASK
 #ifdef _DEBUG
  FILEFLAGS VS_FF_DEBUG
 #else
@@ -12,20 +14,20 @@ IDR_VERSION VERSIONINFO
 #endif
  FILEOS VOS_NT_WINDOWS32
  FILETYPE VFT_DLL
- FILESUBTYPE 0x0L
+ FILESUBTYPE VFT2_UNKNOWN
 BEGIN
     BLOCK "StringFileInfo"
     BEGIN
         BLOCK "040904b0"
         BEGIN
             VALUE "CompanyName", "sonochiwa"
-            VALUE "FileDescription", "High Polling Rate Fix"
-            VALUE "FileVersion", "1.0.0"
+            VALUE "FileDescription", PLUGIN_NAME
+            VALUE "FileVersion", PLUGIN_VERSION
             VALUE "InternalName", "HighPollingRateFix"
             VALUE "LegalCopyright", "Copyright (c) 2026 Rashid Mamarimov (sonochiwa)"
             VALUE "OriginalFilename", "HighPollingRateFix.asi"
-            VALUE "ProductName", "High Polling Rate Fix"
-            VALUE "ProductVersion", "1.0.0"
+            VALUE "ProductName", PLUGIN_NAME
+            VALUE "ProductVersion", PLUGIN_VERSION
         END
     END
     BLOCK "VarFileInfo"

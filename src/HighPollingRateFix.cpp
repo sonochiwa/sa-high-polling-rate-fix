@@ -1,13 +1,28 @@
+// GTA San Andreas reads the mouse through DirectInput 8 in immediate mode,
+// once per frame, but the process pays for every packet the device sends: an
+// acquired DirectInput mouse costs about 42 microseconds of CPU per packet,
+// and Windows generates the legacy mouse messages for the process under the
+// desktop input lock, which makes the game thread wait. At 1000 Hz and above
+// that is the frame stutter this plugin removes.
+//
+// The plugin hooks DirectInput8Create and IDirectInput8::CreateDevice and
+// hands the game a mouse device that lives in this module. The real device
+// is still created and answers everything that merely describes it, but it
+// is never acquired; the movement comes from raw input on a thread of its
+// own, legacy message generation is switched off, and the messages the
+// front-end needs are posted back to the game window. The same numbers reach
+// the game through the same call, and nothing in gta_sa.exe is patched.
+
+#include "mouse_device.h"
+#include "raw_input.h"
+
+#include "MinHook.h"
+
 #include <windows.h>
 #include <dinput.h>
 
 #include <new>
 
-#include "MinHook.h"
-#include "MouseDevice.h"
-#include "RawMouse.h"
-
-namespace hprf {
 namespace {
 
 constexpr int kVtableCreateDevice = 3;
@@ -163,8 +178,7 @@ void PinSelf() {
                        reinterpret_cast<LPCWSTR>(&PinSelf), &pinned);
 }
 
-}  // namespace
-}  // namespace hprf
+} // namespace
 
 BOOL WINAPI DllMain(HINSTANCE instance, DWORD reason, LPVOID) {
     if (reason != DLL_PROCESS_ATTACH) {
@@ -172,12 +186,12 @@ BOOL WINAPI DllMain(HINSTANCE instance, DWORD reason, LPVOID) {
     }
 
     DisableThreadLibraryCalls(instance);
-    hprf::PinSelf();
+    PinSelf();
 
     // DllMain runs under the loader lock and the initialization below loads
     // dinput8 and starts a thread, so it is moved off this call.
     HANDLE thread =
-        CreateThread(nullptr, 0, &hprf::Initialize, nullptr, 0, nullptr);
+        CreateThread(nullptr, 0, &Initialize, nullptr, 0, nullptr);
     if (thread) {
         CloseHandle(thread);
     }

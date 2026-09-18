@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="HighPollingRateFix.cpp" />
+    <ClCompile Include="clock.cpp" />
+    <ClCompile Include="legacy_messages.cpp" />
+    <ClCompile Include="mouse_device.cpp" />
+    <ClCompile Include="raw_input.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="clock.h" />
+    <ClInclude Include="legacy_messages.h" />
+    <ClInclude Include="mouse_device.h" />
+    <ClInclude Include="raw_input.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="version.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="HighPollingRateFix.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\.github\workflows\release.yml" />
+    <None Include="..\CHANGELOG.md" />
+    <None Include="..\LICENSE" />
+    <None Include="..\README.md" />
+  </ItemGroup>
+</Project>

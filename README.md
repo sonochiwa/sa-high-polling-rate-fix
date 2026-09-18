@@ -1,8 +1,8 @@
 # High Polling Rate Fix
 
-An ASI plugin that serves the GTA San Andreas mouse from Windows raw input
-instead of DirectInput, removing the frame stutter that appears with 1000 Hz
-and faster mice.
+`HighPollingRateFix.asi` is a standalone GTA San Andreas plugin that serves
+the mouse from Windows raw input instead of DirectInput, removing the frame
+stutter that appears with 1000 Hz and faster mice.
 
 GTA San Andreas reads the mouse through DirectInput 8 in immediate mode: once
 per frame it calls `IDirectInputDevice8::GetDeviceState` and uses the movement
@@ -57,19 +57,55 @@ particular `gta_sa.exe` build.
 
 ## Requirements
 
-- GTA San Andreas on Windows, with a working ASI loader.
-- Windows on an x86-compatible system.
+- GTA San Andreas 1.0 US (Compact or Hoodlum executable). The plugin patches
+  no game code and hooks `dinput8.dll` only, so other builds are expected to
+  work but were not tested.
+- An ASI loader, such as Silent's ASI Loader or Ultimate ASI Loader.
+
+When raw input cannot be registered or a request cannot be served, the game
+keeps the unmodified DirectInput device and behaves as it does without the
+plugin.
 
 ## Installation
 
-Copy `HighPollingRateFix.asi` to the GTA San Andreas directory containing
-`gta_sa.exe`. Remove the file to uninstall the fix.
+1. Extract `HighPollingRateFix.asi` into the GTA San Andreas directory or its
+   `scripts` directory.
+2. Start the game.
+
+Remove the file to uninstall the fix.
 
 ## Building
 
-Build `HighPollingRateFix.sln` with Visual Studio 2022, the v143 C++ toolset,
-`Release` configuration, and `Win32` platform. The output is written to
-`build\HighPollingRateFix.asi`.
+Visual Studio 2022 (v143), `Release|Win32`. Open `HighPollingRateFix.sln` or
+run:
+
+```powershell
+msbuild HighPollingRateFix.sln /t:Rebuild /p:Configuration=Release /p:Platform=Win32
+```
+
+The plugin is written to `build\HighPollingRateFix.asi`.
+
+## Repository Layout
+
+```text
+HighPollingRateFix.sln
+README.md
+CHANGELOG.md
+LICENSE
+.github\workflows\release.yml   Tagged release build, checksum and attestation
+src\
+  HighPollingRateFix.cpp        DllMain and the dinput8 hooks
+  HighPollingRateFix.rc         Version resource
+  HighPollingRateFix.vcxproj
+  clock.cpp / clock.h           Performance counter timing
+  legacy_messages.cpp / .h      Cursor, click and wheel messages posted back to the game
+  mouse_device.cpp / .h         The IDirectInputDevice8 proxy the game receives
+  raw_input.cpp / .h            Raw input thread and per-device accumulators
+  resource.h
+  version.h
+vendor\
+  minhook\                      MinHook, compiled into the plugin
+```
 
 ## How It Works
 
@@ -101,18 +137,16 @@ the real device is created as usual and then wrapped:
 
 ## Release Integrity
 
-Tagged release archives are built from the tagged source by GitHub Actions.
-Each release includes a SHA-256 checksum file and a signed build-provenance
-attestation, which can be verified with GitHub CLI:
+Tagged releases are built by GitHub Actions from the tagged commit. Each
+release carries `HighPollingRateFix-vX.Y.Z.zip`, its SHA-256 in
+`HighPollingRateFix-vX.Y.Z.zip.sha256` and a signed build-provenance
+attestation, which proves that the archive was produced by this repository's
+workflow from that revision. It does not prove the code is bug-free.
 
 ```text
-gh attestation verify HighPollingRateFix-v1.0.0.zip -R sonochiwa/sa-high-polling-rate-fix
+gh attestation verify HighPollingRateFix-vX.Y.Z.zip -R sonochiwa/sa-high-polling-rate-fix
 ```
-
-The attestation identifies the repository workflow and source revision that
-produced the archive. It is not a guarantee that the source is bug-free or
-safe.
 
 ## License
 
-This project is available under the MIT License. See `LICENSE`.
+MIT. See [LICENSE](LICENSE).

@@ -2,8 +2,6 @@
 
 #include <windows.h>
 
-namespace hprf {
-
 // Number of buttons reported to DirectInput consumers: left, right, middle,
 // X1 and X2, in the order DIMOUSESTATE uses.
 constexpr int kMouseButtonCount = 5;
@@ -48,10 +46,5 @@ void Take(int slot, MouseSample* sample);
 // IDirectInputDevice8::SetEventNotification. Pass nullptr to clear it.
 void SetNotificationEvent(HANDLE event);
 
-// The game window, taken from SetCooperativeLevel. Legacy mouse messages are
-// suppressed for the process, so the cursor position, the clicks and the
-// double clicks the front-end needs are posted back to this window.
-void SetTargetWindow(HWND window);
 
-}  // namespace rawmouse
-}  // namespace hprf
+} // namespace rawmouse
