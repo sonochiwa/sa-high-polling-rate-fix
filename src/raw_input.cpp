@@ -7,6 +7,14 @@ namespace rawmouse {
 namespace {
 
 const wchar_t kWindowClassName[] = L"HighPollingRateFixRawInput";
+
+// The window class the NVIDIA App overlay registers raw mouse input to while
+// its in-game overlay is open. The name is a constant in nvspcap.dll, the
+// part of the overlay that runs inside the game; the class is registered with
+// the game's module handle, so the class name is the only thing that tells
+// the window apart from any other in the process.
+const wchar_t kDriverOverlayClassName[] =
+    L"{F54CC444-0903-46F8-AF1E-105BE5E18F46}";
 constexpr UINT_PTR kMaintenanceTimerId = 1;
 constexpr UINT kMaintenanceTimerInterval = 1000;
 
@@ -209,10 +217,26 @@ bool RegisterForRawInput(HWND window) {
     return RegisterRawInputDevices(&device, 1, sizeof(device)) != FALSE;
 }
 
+bool HeldByDriverOverlay(HWND target) {
+    if (!target || !IsWindow(target) || !GetModuleHandleW(L"nvspcap.dll")) {
+        return false;
+    }
+    wchar_t name[64] = {};
+    GetClassNameW(target, name, static_cast<int>(sizeof(name) / sizeof(name[0])));
+    return lstrcmpW(name, kDriverOverlayClassName) == 0;
+}
+
 // Windows keeps one raw mouse registration per process. Another plugin loaded
 // after this one can take the registration away, which would leave the game
 // with no mouse input at all, so it is checked once a second and reclaimed
 // when it is gone.
+//
+// The NVIDIA App overlay is the exception. While it is open it moves the
+// registration to a window of its own and checks once a second that it still
+// has it; reclaiming it here made the two take it from each other every
+// second, and the overlay's cursor stopped for a second at a time while the
+// game's camera moved instead. The overlay hands the registration back when
+// it closes, so it is simply left alone while it holds it.
 void EnsureRegistration(HWND window) {
     UINT count = 0;
     if (GetRegisteredRawInputDevices(nullptr, &count, sizeof(RAWINPUTDEVICE)) ==
@@ -230,7 +254,8 @@ void EnsureRegistration(HWND window) {
             for (UINT index = 0; index < stored; ++index) {
                 if (devices[index].usUsagePage == 0x01 &&
                     devices[index].usUsage == 0x02 &&
-                    devices[index].hwndTarget == window) {
+                    (devices[index].hwndTarget == window ||
+                     HeldByDriverOverlay(devices[index].hwndTarget))) {
                     return;
                 }
             }
