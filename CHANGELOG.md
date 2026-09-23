@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.3
+
+- Fixed the NVIDIA App overlay cursor stopping every second while the game
+  camera moved instead.
+
 ## 1.0.2
 
 - Added `README.txt` to the release archive.
