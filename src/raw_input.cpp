@@ -228,8 +228,16 @@ bool HeldByDriverOverlay(HWND target) {
 
 // Windows keeps one raw mouse registration per process. Another plugin loaded
 // after this one can take the registration away, which would leave the game
-// with no mouse input at all, so it is checked once a second and reclaimed
-// when it is gone.
+// with no mouse input at all, so it is renewed once a second.
+//
+// It is renewed even while this module still holds it. ReShade learns which
+// window receives the raw mouse input only from the RegisterRawInputDevices
+// calls it sees, and it is loaded with the game's Direct3D device, after the
+// game has created its DirectInput mouse and this module has registered.
+// Without a registration it has seen, its overlay gets no mouse movement at
+// all: the legacy messages are switched off, and ReShade drops the
+// WM_MOUSEMOVE posted from here while its overlay holds the mouse. Renewing
+// with the same window and flags changes nothing for the game.
 //
 // The NVIDIA App overlay is the exception. While it is open it moves the
 // registration to a window of its own and checks once a second that it still
@@ -254,8 +262,7 @@ void EnsureRegistration(HWND window) {
             for (UINT index = 0; index < stored; ++index) {
                 if (devices[index].usUsagePage == 0x01 &&
                     devices[index].usUsage == 0x02 &&
-                    (devices[index].hwndTarget == window ||
-                     HeldByDriverOverlay(devices[index].hwndTarget))) {
+                    HeldByDriverOverlay(devices[index].hwndTarget)) {
                     return;
                 }
             }
