@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.4
+
+- Fixed the ReShade overlay cursor staying in the middle of the screen.
+
 ## 1.0.3
 
 - Fixed the NVIDIA App overlay cursor stopping every second while the game
