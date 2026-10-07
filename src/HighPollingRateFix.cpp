@@ -15,6 +15,7 @@
 
 #include "mouse_device.h"
 #include "raw_input.h"
+#include "thread_freeze.h"
 
 #include "MinHook.h"
 
@@ -111,9 +112,14 @@ void HookCreateDevice(void* object, bool unicode) {
                            : reinterpret_cast<void*>(&HookedCreateDeviceA);
     void* original = nullptr;
 
-    if (MH_CreateHook(target, detour, &original) != MH_OK ||
-        MH_EnableHook(target) != MH_OK) {
+    if (MH_CreateHook(target, detour, &original) != MH_OK) {
         return;
+    }
+    {
+        ThreadFreezeLock lock;
+        if (MH_EnableHook(target) != MH_OK) {
+            return;
+        }
     }
 
     if (unicode) {
@@ -162,6 +168,7 @@ DWORD WINAPI Initialize(LPVOID) {
                       reinterpret_cast<void*>(&HookedDirectInput8Create),
                       reinterpret_cast<void**>(&g_originalDirectInput8Create)) ==
         MH_OK) {
+        ThreadFreezeLock lock;
         MH_EnableHook(reinterpret_cast<void*>(create));
     }
     return 0;

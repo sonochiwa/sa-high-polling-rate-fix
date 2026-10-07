@@ -6,6 +6,7 @@
     <ClCompile Include="legacy_messages.cpp" />
     <ClCompile Include="mouse_device.cpp" />
     <ClCompile Include="raw_input.cpp" />
+    <ClCompile Include="thread_freeze.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="clock.h" />
@@ -13,6 +14,7 @@
     <ClInclude Include="mouse_device.h" />
     <ClInclude Include="raw_input.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="thread_freeze.h" />
     <ClInclude Include="version.h" />
   </ItemGroup>
   <ItemGroup>
