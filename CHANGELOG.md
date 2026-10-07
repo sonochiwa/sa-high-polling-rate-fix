@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.5
+
+- Fixed a rare hang at start-up when another plugin hooks the game at the
+  same moment.
+
 ## 1.0.4
 
 - Fixed the ReShade overlay cursor staying in the middle of the screen.
