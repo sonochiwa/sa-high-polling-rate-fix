@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.6
+
+- Fixed the menu cursor not moving when Windows had been running for more
+  than about ten days.
+
 ## 1.0.5
 
 - Fixed a rare hang at start-up when another plugin hooks the game at the
