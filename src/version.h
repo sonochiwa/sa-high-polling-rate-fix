@@ -2,6 +2,6 @@
 
 #define PLUGIN_VERSION_MAJOR 1
 #define PLUGIN_VERSION_MINOR 0
-#define PLUGIN_VERSION_PATCH 6
-#define PLUGIN_VERSION "1.0.6"
+#define PLUGIN_VERSION_PATCH 7
+#define PLUGIN_VERSION "1.0.7"
 #define PLUGIN_NAME "High Polling Rate Fix"

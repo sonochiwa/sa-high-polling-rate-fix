@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.7
+
+- Fixed the busy cursor and dead clicks in the screen and resolution
+  dialog shown at start-up.
+
 ## 1.0.6
 
 - Fixed the menu cursor not moving when Windows had been running for more
