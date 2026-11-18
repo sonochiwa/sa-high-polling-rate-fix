@@ -115,18 +115,18 @@ void HookCreateDevice(void* object, bool unicode) {
     if (MH_CreateHook(target, detour, &original) != MH_OK) {
         return;
     }
-    {
-        ThreadFreezeLock lock;
-        if (MH_EnableHook(target) != MH_OK) {
-            return;
-        }
-    }
 
+    // The trampoline is published before the hook goes live: another thread
+    // calling CreateDevice right after MH_EnableHook would otherwise enter the
+    // detour while the pointer to the original is still null.
     if (unicode) {
         g_originalCreateDeviceW = reinterpret_cast<CreateDeviceWFn>(original);
     } else {
         g_originalCreateDeviceA = reinterpret_cast<CreateDeviceAFn>(original);
     }
+
+    ThreadFreezeLock lock;
+    MH_EnableHook(target);
 }
 
 HRESULT WINAPI HookedDirectInput8Create(HINSTANCE instance, DWORD version,

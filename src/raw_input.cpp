@@ -65,12 +65,37 @@ bool g_haveAbsolutePosition = false;
 LONG g_lastAbsoluteX = 0;
 LONG g_lastAbsoluteY = 0;
 
+// Whether the registration in force switches the legacy mouse messages off.
+// Windows applies RIDEV_NOLEGACY to every window of the process, not only to
+// the game window, so it is in force only while the game window is the
+// foreground window. Any other window the process shows, such as the device
+// selection dialog the game opens before it creates its Direct3D device or a
+// message box, needs the real messages: without them it never receives
+// WM_SETCURSOR or a click, and the busy cursor stays on it. Written and read
+// only on the raw input thread.
+bool g_legacySuppressed = false;
+
+void EnsureRegistration(HWND window);
+
 // INPUTSINK delivers packets whether or not the game has focus, so the focus
 // rule DirectInput applied has to be reapplied here.
 bool g_foreground = false;
 LONGLONG g_lastForegroundCheckTicks = 0;
 // Alt-tab does not need to be noticed faster than this.
 constexpr LONGLONG kForegroundCheckIntervalMicros = 32000;
+
+// The legacy messages are switched off only while the window DirectInput was
+// given is in the foreground, which is also the only time the messages posted
+// from here have a reader. Before the game names its window, nothing is known
+// to be the game, and Windows keeps generating them.
+bool ShouldSuppressLegacy(HWND foreground) {
+    HWND target = legacy::TargetWindow();
+    if (!target || !foreground || !IsWindow(target)) {
+        return false;
+    }
+    HWND root = GetAncestor(target, GA_ROOT);
+    return foreground == (root ? root : target);
+}
 
 bool GameIsForeground() {
     LONGLONG now = 0;
@@ -89,6 +114,13 @@ bool GameIsForeground() {
     g_foreground = foreground != nullptr &&
                    GetWindowThreadProcessId(foreground, &processId) != 0 &&
                    processId == GetCurrentProcessId();
+
+    // Focus moving between the game window and another window of the
+    // process is noticed here, on the first packet after it, rather than by
+    // the once-a-second maintenance timer.
+    if (ShouldSuppressLegacy(foreground) != g_legacySuppressed) {
+        EnsureRegistration(g_window);
+    }
     return g_foreground;
 }
 
@@ -181,8 +213,12 @@ void AccumulateMouse(const RAWMOUSE& mouse) {
         }
     }
 
-    legacy::TrackCursor();
-    legacy::PostButtons(flags, wheel);
+    // While Windows generates the legacy messages itself, posting them as
+    // well would deliver every movement and click twice.
+    if (g_legacySuppressed) {
+        legacy::TrackCursor();
+        legacy::PostButtons(flags, wheel);
+    }
 }
 
 // Reads one WM_INPUT payload.
@@ -203,18 +239,24 @@ void ReadRawInput(HRAWINPUT handle) {
     AccumulateMouse(input->data.mouse);
 }
 
-bool RegisterForRawInput(HWND window) {
+bool RegisterForRawInput(HWND window, bool suppressLegacy) {
     RAWINPUTDEVICE device = {};
     // Generic desktop controls, mouse.
     device.usUsagePage = 0x01;
     device.usUsage = 0x02;
-    // NOLEGACY and INPUTSINK go together or neither does: with a message-only
-    // window as the target, NOLEGACY alone stops the raw stream arriving at
-    // all, because a message-only window never holds focus and delivery is
-    // focus-driven without INPUTSINK.
-    device.dwFlags = RIDEV_NOLEGACY | RIDEV_INPUTSINK;
+    // INPUTSINK is always needed: a message-only window never holds focus, and
+    // delivery is focus-driven without it, so the raw stream would not arrive
+    // at all.
+    device.dwFlags = RIDEV_INPUTSINK;
+    if (suppressLegacy) {
+        device.dwFlags |= RIDEV_NOLEGACY;
+    }
     device.hwndTarget = window;
-    return RegisterRawInputDevices(&device, 1, sizeof(device)) != FALSE;
+    if (!RegisterRawInputDevices(&device, 1, sizeof(device))) {
+        return false;
+    }
+    g_legacySuppressed = suppressLegacy;
+    return true;
 }
 
 bool HeldByDriverOverlay(HWND target) {
@@ -269,7 +311,7 @@ void EnsureRegistration(HWND window) {
         }
     }
 
-    RegisterForRawInput(window);
+    RegisterForRawInput(window, ShouldSuppressLegacy(GetForegroundWindow()));
 }
 
 LRESULT CALLBACK RawInputWndProc(HWND window, UINT message, WPARAM wParam,
@@ -307,7 +349,8 @@ DWORD WINAPI RawInputThread(LPVOID) {
         return 0;
     }
 
-    if (!RegisterForRawInput(g_window)) {
+    if (!RegisterForRawInput(g_window,
+                             ShouldSuppressLegacy(GetForegroundWindow()))) {
         DestroyWindow(g_window);
         g_window = nullptr;
         SetEvent(g_readyEvent);
